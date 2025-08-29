@@ -281,7 +281,7 @@ function typeBadge(type){
 
 function renderTablePokemon(arr){
   if(!arr.length){ tablePokemonContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
-  const headers=['#','Nom','Type1','Type2','Total','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
+  const headers=['#','Nom','Type primaire','Type secondaire','Base stats','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
   const rows = arr.map(p=>{
     const nameSpan = document.createElement('span');
     nameSpan.className='cell-name';
