@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Jester Poke Draft ProApp</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+  .hidden { display: none !important; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:20px; color:#111; }
+  h1 { margin:0 0 10px 0; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .col { border:1px solid #ddd; padding:10px; border-radius:6px; min-width:240px; }
+  button { padding:8px 12px; margin-right:8px; }
+  .small { font-size:0.9em; color:#555; margin-top:6px; }
+  .picked { background:#f7fdf0; border:1px solid #cde7a6; padding:8px; border-radius:6px; width:100%; }
+  .error { color:#b00020; font-weight:600; }
+  table { border-collapse:collapse; width:100%; margin-top:8px; table-layout:fixed; }
+  th, td { border:1px solid #ddd; padding:6px 8px; text-align:left; font-size:0.95em; vertical-align:top; }
+  th { background:#f0f0f0; font-weight:600; }
+  .section { margin-top:14px; }
+  .preview { color:#444; font-size:0.9em; margin-top:6px; }
+  /* Column width distribution (percent of table width) */
+  /* Pokémon table: #:5% | Nom:20% | Type1:10% | Type2:10% | Total:6% | HP:6% | Atk:6% | Def:6% | SpAtk:6% | SpDef:6% | Spe:6%  -> sums ~87% leaving room for borders; Description-style columns handle overflow */
+  .tbl-pokemon th:nth-child(1), .tbl-pokemon td:nth-child(1) { width:5%; max-width:5%; }
+  .tbl-pokemon th:nth-child(2), .tbl-pokemon td:nth-child(2) { width:20%; max-width:20%; }
+  .tbl-pokemon th:nth-child(3), .tbl-pokemon td:nth-child(3),
+  .tbl-pokemon th:nth-child(4), .tbl-pokemon td:nth-child(4) { width:10%; max-width:10%; }
+  .tbl-pokemon th:nth-child(5), .tbl-pokemon td:nth-child(5),
+  .tbl-pokemon th:nth-child(6), .tbl-pokemon td:nth-child(6),
+  .tbl-pokemon th:nth-child(7), .tbl-pokemon td:nth-child(7),
+  .tbl-pokemon th:nth-child(8), .tbl-pokemon td:nth-child(8),
+  .tbl-pokemon th:nth-child(9), .tbl-pokemon td:nth-child(9),
+  .tbl-pokemon th:nth-child(10), .tbl-pokemon td:nth-child(10),
+  .tbl-pokemon th:nth-child(11), .tbl-pokemon td:nth-child(11) { width:6%; max-width:6%; text-align:center; }
+
+  /* Moves table: #:6% | Nom:24% | Type:10% | Power:8% | Acc:8% | Effet:44% */
+  .tbl-moves th:nth-child(1), .tbl-moves td:nth-child(1) { width:6%; }
+  .tbl-moves th:nth-child(2), .tbl-moves td:nth-child(2) { width:24%; }
+  .tbl-moves th:nth-child(3), .tbl-moves td:nth-child(3) { width:10%; }
+  .tbl-moves th:nth-child(4), .tbl-moves td:nth-child(4),
+  .tbl-moves th:nth-child(5), .tbl-moves td:nth-child(5) { width:8%; text-align:center; }
+  .tbl-moves th:nth-child(6), .tbl-moves td:nth-child(6) { width:44%; }
+
+  /* Items table: #:6% | Nom:18% | Description:76% */
+  .tbl-items th:nth-child(1), .tbl-items td:nth-child(1) { width:6%; }
+  .tbl-items th:nth-child(2), .tbl-items td:nth-child(2) { width:18%; max-width:18%; }
+  .tbl-items th:nth-child(3), .tbl-items td:nth-child(3) { width:76%; }
+
+  /* Name truncation (approx 25 chars) */
+  .cell-name {
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+    display:inline-block;
+    vertical-align:middle;
+  }
+
+  /* Numeric columns: ensure compactness */
+  th.numeric, td.numeric { text-align:center; font-variant-numeric:tabular-nums; }
+
+  /* Type badges */
+  .type {
+    display:inline-block;
+    padding:4px 6px;
+    border-radius:6px;
+    color:#111;
+    font-weight:600;
+    font-size:0.9em;
+    text-align:center;
+    max-width:100%;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+  /* Colors by type (background) and readable text color chosen */
+  .type-Normal     { background:#D6D6D6; color:#111; } /* gris clair */
+  .type-Fighting   { background:#B36B3A; color:#fff; } /* cuivre */
+  .type-Flying     { background:#9FD3FF; color:#042A3A; } /* bleu ciel */
+  .type-Poison     { background:#A16AB8; color:#fff; } /* violet */
+  .type-Ground     { background:#D2B48C; color:#2a1f12; } /* sable */
+  .type-Rock       { background:#7A6B4F; color:#fff; } /* brun/gris */
+  .type-Bug        { background:#9DBF6A; color:#1d2a10; } /* vert olive */
+  .type-Ghost      { background:#5B3E6B; color:#fff; } /* indigo sombre */
+  .type-Steel      { background:#B8C3C8; color:#111; } /* argent */
+  .type-Fire       { background:#FF8C4A; color:#3a1300; } /* orange/rouge */
+  .type-Water      { background:#6FB7FF; color:#042A3A; } /* bleu */
+  .type-Grass      { background:#7ED07C; color:#0b3a12; } /* vert */
+  .type-Electric   { background:#FFE66D; color:#352a00; } /* jaune */
+  .type-Psychic    { background:#FF9FC9; color:#3a003a; } /* rose */
+  .type-Ice        { background:#C6F0FF; color:#003442; } /* cyan pâle */
+  .type-Dragon     { background:#5C6BC0; color:#fff; } /* indigo */
+  .type-Dark       { background:#4A4A4A; color:#fff; } /* gris foncé */
+  .type-Fairy      { background:#FFDFF3; color:#36102a; } /* rose pâle */
+
+  /* small visual tweaks */
+  table td { word-break:break-word; } /* allow wrapping where allowed (desc/effect) */
+  .nowrap { white-space:nowrap; }
+</style>
+</head>
+<body>
+  <h1>Tirage TSV — Pokémon / Moves / Objets</h1>
+  
+<div id="importRow" class="row">
+  <div class="row">
+    <div class="col">
+      <label><strong>Fichier Pokémon (TSV)</strong></label><br/>
+      <input id="filePokemon" type="file" accept=".txt,.tsv,.csv" />
+      <div id="countPok" class="small">Aucun fichier chargé</div>
+      <div id="previewPok" class="preview"></div>
+    </div>
+
+    <div class="col">
+      <label><strong>Fichier Moves (TSV)</strong></label><br/>
+      <input id="fileMoves" type="file" accept=".txt,.tsv,.csv" />
+      <div id="countMoves" class="small">Aucun fichier chargé</div>
+      <div id="previewMoves" class="preview"></div>
+    </div>
+
+    <div class="col">
+      <label><strong>Fichier Objets (TSV)</strong></label><br/>
+      <input id="fileItems" type="file" accept=".txt,.tsv,.csv" />
+      <div id="countItems" class="small">Aucun fichier chargé</div>
+      <div id="previewItems" class="preview"></div>
+    </div>
+  </div>
+</div>
+  <div>
+    <button id="generateBtn" disabled>Générer 3 de chaque</button>
+    <button id="excludeBtn" disabled>Nouveau (exclure précédents)</button>
+    <button id="resetBtn">Réinitialiser exclusions</button>
+    <span id="status" class="small"></span>
+  </div>
+
+  <hr/>
+
+  <div class="section picked" id="results">
+    <strong>Pokémons choisis</strong>
+    <div id="tablePokemonContainer"></div>
+
+    <strong style="display:block; margin-top:12px;">Objets choisis</strong>
+    <div id="tableItemsContainer"></div>
+
+    <strong style="display:block; margin-top:12px;">Moves choisis</strong>
+    <div id="tableMovesContainer"></div>
+  </div>
+
+<script>
+/* Lecture / parsing (identique) */
+function readRawLines(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve([]);
+    const r = new FileReader();
+    r.onload = () => {
+      let text = r.result;
+      if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      text = text.replace(/\u00A0/g, ' ');
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      resolve(lines);
+    };
+    r.onerror = () => reject(r.error);
+    r.readAsText(file, 'utf-8');
+  });
+}
+function splitTSVLine(line) {
+  if (line.indexOf('\t') !== -1) return line.split('\t').map(s => s.trim());
+  return line.replace(/ {2,}/g, '\t').split('\t').map(s => s.trim());
+}
+function parsePokemonLine(line) {
+  const cols = splitTSVLine(line); while (cols.length < 11) cols.push('');
+  return { id:cols[0]||'', name:cols[1]||'', type1:cols[2]||'', type2:cols[3]||'', total:cols[4]||'', hp:cols[5]||'', atk:cols[6]||'', def:cols[7]||'', spatk:cols[8]||'', spdef:cols[9]||'', spd:cols[10]||'', _raw:cols };
+}
+function parseItemLine(line) { const cols = splitTSVLine(line); while (cols.length < 3) cols.push(''); return { id:cols[0]||'', name:cols[1]||'', desc:cols[2]||'', _raw:cols }; }
+function parseMoveLine(line) { const cols = splitTSVLine(line); while (cols.length < 6) cols.push(''); return { id:cols[0]||'', name:cols[1]||'', type:cols[2]||'', power:cols[3]||'', acc:cols[4]||'', effect:cols[5]||'', _raw:cols }; }
+
+function shuffleArray(a){ const arr=a.slice(); for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+function pickNFrom(list,n,excludeSet=new Set(),idGetter=x=>x.id){ const pool=list.filter(x=>!excludeSet.has(idGetter(x))); if(pool.length<=n) return pool.slice(); return shuffleArray(pool).slice(0,n); }
+
+/* State & DOM */
+let rawPokemonLines=[], rawMoveLines=[], rawItemLines=[];
+let pokemons=[], moves=[], items=[];
+let excludedPokemon=new Set(), excludedMoves=new Set(), excludedItems=new Set();
+let lastChosen={ pokemon:[], moves:[], items:[] };
+
+const filePokemon=document.getElementById('filePokemon');
+const fileMoves=document.getElementById('fileMoves');
+const fileItems=document.getElementById('fileItems');
+
+const countPok=document.getElementById('countPok');
+const countMoves=document.getElementById('countMoves');
+const countItems=document.getElementById('countItems');
+
+const previewPok=document.getElementById('previewPok');
+const previewMoves=document.getElementById('previewMoves');
+const previewItems=document.getElementById('previewItems');
+
+const generateBtn=document.getElementById('generateBtn');
+const excludeBtn=document.getElementById('excludeBtn');
+const resetBtn=document.getElementById('resetBtn');
+const status=document.getElementById('status');
+
+const tablePokemonContainer=document.getElementById('tablePokemonContainer');
+const tableItemsContainer=document.getElementById('tableItemsContainer');
+const tableMovesContainer=document.getElementById('tableMovesContainer');
+
+const importRow = document.getElementById('importRow');
+
+function hideImportBoxesIfReady(){
+  const ready = pokemons.length>0 && moves.length>0 && items.length>0;
+  if (importRow) importRow.classList.toggle('hidden', ready);
+}
+
+/* Load & diagnostics */
+async function loadAll(){
+  try{
+    rawPokemonLines = await readRawLines(filePokemon.files[0]);
+    rawMoveLines = await readRawLines(fileMoves.files[0]);
+    rawItemLines = await readRawLines(fileItems.files[0]);
+
+    console.group('Diagnostic fichiers');
+    console.log('Pokémon lignes lues:', rawPokemonLines.length);
+    rawPokemonLines.slice(0,3).forEach((l,i)=>console.log(`Pok ${i+1}:`, splitTSVLine(l).slice(0,8)));
+    console.log('Moves lignes lues:', rawMoveLines.length);
+    rawMoveLines.slice(0,3).forEach((l,i)=>console.log(`Move ${i+1}:`, splitTSVLine(l).slice(0,8)));
+    console.log('Items lignes lues:', rawItemLines.length);
+    rawItemLines.slice(0,3).forEach((l,i)=>console.log(`Item ${i+1}:`, splitTSVLine(l).slice(0,6)));
+    console.groupEnd();
+
+    pokemons = rawPokemonLines.map(parsePokemonLine);
+    moves = rawMoveLines.map(parseMoveLine);
+    items = rawItemLines.map(parseItemLine);
+
+    countPok.textContent = pokemons.length ? `${pokemons.length} éléments` : 'Aucun';
+    countMoves.textContent = moves.length ? `${moves.length} éléments` : 'Aucun';
+    countItems.textContent = items.length ? `${items.length} éléments` : 'Aucun';
+
+    previewPok.textContent = pokemons.slice(0,10).map(p=>`${p.id} ${p.name}`).join(', ') + (pokemons.length>10 ? ` (+${pokemons.length-10} autres)` : '');
+    previewMoves.textContent = moves.slice(0,10).map(m=>`${m.id} ${m.name}`).join(', ') + (moves.length>10 ? ` (+${moves.length-10} autres)` : '');
+    previewItems.textContent = items.slice(0,10).map(it=>`${it.id} ${it.name}`).join(', ') + (items.length>10 ? ` (+${items.length-10} autres)` : '');
+
+    status.innerHTML = `<span class="small">Diagnostic: ${pokemons.length} pokémons, ${moves.length} moves, ${items.length} objets. Voir console pour colonnes lues.</span>`;
+    updateButtons();
+	hideImportBoxesIfReady();
+  }catch(err){
+    status.innerHTML = `<span class="error">Erreur lecture fichier: ${err.message||err}</span>`;
+  }
+}
+function updateButtons(){ const ready = pokemons.length>0 && moves.length>0 && items.length>0; generateBtn.disabled=!ready; excludeBtn.disabled=!ready; }
+
+/* Rendering helpers */
+function createTable(headers, rows, tableClass){
+  const table=document.createElement('table'); if(tableClass) table.className=tableClass;
+  const thead=document.createElement('thead'); const trh=document.createElement('tr');
+  headers.forEach(h=>{ const th=document.createElement('th'); th.textContent=h; trh.appendChild(th); });
+  thead.appendChild(trh); table.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  rows.forEach(row=>{ const tr=document.createElement('tr'); row.forEach(cell=>{
+    const td=document.createElement('td');
+    // cell can be DOM node or string
+    if(cell && cell.nodeType) td.appendChild(cell);
+    else td.textContent = cell ?? '';
+    tr.appendChild(td);
+  }); tbody.appendChild(tr); });
+  table.appendChild(tbody); return table;
+}
+
+/* Type badge factory */
+function typeBadge(type){
+  const t = (type||'').trim();
+  const cls = 'type-' + (t ? t.charAt(0).toUpperCase() + t.slice(1) : '');
+  const span = document.createElement('span');
+  span.className = 'type';
+  // sanitize class to allowed set (avoid injection)
+  const allowed = ['Normal','Fighting','Flying','Poison','Ground','Rock','Bug','Ghost','Steel','Fire','Water','Grass','Electric','Psychic','Ice','Dragon','Dark','Fairy'];
+  const proper = allowed.includes(t.charAt(0).toUpperCase() + t.slice(1)) ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  span.className = 'type type-' + proper;
+  span.textContent = proper || '';
+  return span;
+}
+
+function renderTablePokemon(arr){
+  if(!arr.length){ tablePokemonContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
+  const headers=['#','Nom','Type1','Type2','Total','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
+  const rows = arr.map(p=>{
+    const nameSpan = document.createElement('span');
+    nameSpan.className='cell-name';
+    nameSpan.title = p.name || '';
+    nameSpan.textContent = p.name || '';
+    const type1 = typeBadge(p.type1);
+    const type2 = typeBadge(p.type2);
+    return [p.id, nameSpan, type1, type2, p.total, p.hp, p.atk, p.def, p.spatk, p.spdef, p.spd];
+  });
+  tablePokemonContainer.innerHTML=''; tablePokemonContainer.appendChild(createTable(headers, rows, 'tbl-pokemon'));
+}
+
+function renderTableItems(arr){
+  if(!arr.length){ tableItemsContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
+  const headers=['#','Nom','Description'];
+  const rows = arr.map(it=>{
+    const nameSpan = document.createElement('span');
+    nameSpan.className='cell-name';
+    nameSpan.title = it.name || '';
+    nameSpan.textContent = it.name || '';
+    // description allowed to wrap, multiline
+    const desc = it.desc || '';
+    return [it.id, nameSpan, desc];
+  });
+  tableItemsContainer.innerHTML=''; tableItemsContainer.appendChild(createTable(headers, rows, 'tbl-items'));
+}
+
+function renderTableMoves(arr){
+  if(!arr.length){ tableMovesContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
+  const headers=['#','Nom','Type','Power','Accuracy','Effet'];
+  const rows = arr.map(m=>{
+    const nameSpan = document.createElement('span');
+    nameSpan.className='cell-name';
+    nameSpan.title = m.name || '';
+    nameSpan.textContent = m.name || '';
+    const type = typeBadge(m.type);
+    return [m.id, nameSpan, type, m.power, m.acc, m.effect];
+  });
+  tableMovesContainer.innerHTML=''; tableMovesContainer.appendChild(createTable(headers, rows, 'tbl-moves'));
+}
+
+function renderAllChosen(){ renderTablePokemon(lastChosen.pokemon); renderTableItems(lastChosen.items); renderTableMoves(lastChosen.moves); }
+
+/* Buttons */
+generateBtn.addEventListener('click', ()=>{
+  lastChosen.pokemon = pickNFrom(pokemons,3,excludedPokemon,p=>p.id);
+  lastChosen.moves   = pickNFrom(moves,3,excludedMoves,m=>m.id);
+  lastChosen.items   = pickNFrom(items,3,excludedItems,it=>it.id);
+  renderAllChosen();
+  status.textContent='Sélection générée.';
+});
+excludeBtn.addEventListener('click', ()=>{
+  if(!lastChosen.pokemon.length && !lastChosen.moves.length && !lastChosen.items.length){
+    status.textContent='Aucune sélection précédente — génération initiale effectuée.';
+    generateBtn.click();
+  }
+  lastChosen.pokemon.forEach(p=>excludedPokemon.add(p.id));
+  lastChosen.moves.forEach(m=>excludedMoves.add(m.id));
+  lastChosen.items.forEach(it=>excludedItems.add(it.id));
+
+  const remainingPok = pokemons.filter(x=>!excludedPokemon.has(x.id)).length;
+  const remainingMoves = moves.filter(x=>!excludedMoves.has(x.id)).length;
+  const remainingItems = items.filter(x=>!excludedItems.has(x.id)).length;
+
+  if(remainingPok<=0||remainingMoves<=0||remainingItems<=0){
+    status.innerHTML='<span class="error">Impossible d\'exclure davantage : liste vide pour au moins une catégorie. Réinitialise les exclusions.</span>';
+    return;
+  }
+
+  lastChosen.pokemon = pickNFrom(pokemons,3,excludedPokemon,p=>p.id);
+  lastChosen.moves   = pickNFrom(moves,3,excludedMoves,m=>m.id);
+  lastChosen.items   = pickNFrom(items,3,excludedItems,it=>it.id);
+  renderAllChosen();
+  status.textContent='Nouvelle sélection (exclusions appliquées).';
+});
+resetBtn.addEventListener('click', ()=>{ excludedPokemon=new Set(); excludedMoves=new Set(); excludedItems=new Set(); status.textContent='Exclusions réinitialisées.'; });
+
+/* Drag & drop */
+function handleDropFile(ev,inputEl){ ev.preventDefault(); if(!ev.dataTransfer.files||ev.dataTransfer.files.length===0) return; const f=ev.dataTransfer.files[0]; const dt=new DataTransfer(); dt.items.add(f); inputEl.files=dt.files; loadAll(); }
+['dragover'].forEach(evt=>{ document.addEventListener(evt,e=>e.preventDefault(),false); });
+filePokemon.addEventListener('drop', (e)=>handleDropFile(e,filePokemon));
+fileMoves.addEventListener('drop', (e)=>handleDropFile(e,fileMoves));
+fileItems.addEventListener('drop', (e)=>handleDropFile(e,fileItems));
+
+/* Init */
+filePokemon.addEventListener('change', loadAll);
+fileMoves.addEventListener('change', loadAll);
+fileItems.addEventListener('change', loadAll);
+updateButtons();
+</script>
+
+
+</body>
+</html>
