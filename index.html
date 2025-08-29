@@ -31,7 +31,7 @@
   .tbl-pokemon th:nth-child(8), .tbl-pokemon td:nth-child(8),
   .tbl-pokemon th:nth-child(9), .tbl-pokemon td:nth-child(9),
   .tbl-pokemon th:nth-child(10), .tbl-pokemon td:nth-child(10),
-  .tbl-pokemon th:nth-child(11), .tbl-pokemon td:nth-child(11) { width:6%; max-width:6%; text-align:center; }
+  .tbl-pokemon th:nth-child(11), .tbl-pokemon td:nth-child(11) { width:6%; max-width:6%; }
 
   /* Moves table: #:6% | Nom:24% | Type:10% | Power:8% | Acc:8% | Effet:44% */
   .tbl-moves th:nth-child(1), .tbl-moves td:nth-child(1) { width:6%; }
@@ -281,18 +281,129 @@ function typeBadge(type){
 
 function renderTablePokemon(arr){
   if(!arr.length){ tablePokemonContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
-  const headers=['#','Nom','Type primaire','Type secondaire','Base stats','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
+  const headers=['#','Nom','Image','Type primaire','Type secondaire','Base stats','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
+
+  // Liste des préfixes régionaux / variantes qu'on veut transformer en suffixe filename
+  const regionalPrefixes = ['alolan','galarian','hisuian','paldean','alola','galar','paldea','hisui'];
+
+  // Mappage manuel pour cas spéciaux irréguliers (clé = nom tel qu'apparaît dans ton fichier, valeur = filename attendu)
+  const manualMap = {
+    // exemples :
+    // 'Mr. Mime': 'mr-mime',
+    // 'Farfetch’d': 'farfetchd',
+    // 'Type: Null': 'type-null',
+    // 'Mime Jr.': 'mime-jr',
+    // 'Ho-Oh': 'ho-oh',
+     'Wash Rotom': 'rotom-wash',
+     'Heat Rotom': 'rotom-heat',
+     'Fan Rotom': 'rotom-fan',
+     'Mow Rotom': 'rotom-mow',
+     'Frost Rotom': 'rotom-frost',
+	 'Lycanroc (Dusk Form)': 'lycanroc-dusk',
+	 'Lycanroc (Midday Form)': 'lycanroc-midday',
+	 'Lycanroc (Midnight Form)': 'lycanroc-midnight',
+	 'Oricorio Fire': 'oricorio-baile',
+	 'Oricorio Elect': 'oricorio-pom-pom',
+	 'Oricorio Psy': 'oricorio-pau',
+	 'Oricorio Gho': 'oricorio-sensu',
+	 'Oinkologne (Female)': 'oinkologne-female',
+	 'Oinkologne (Male)': 'oinkologne-male',
+	 'Indeedee (Female)': 'indeedee-female',
+	 'Indeedee (Male)': 'indeedee-male'
+  };
+
+  // Helper: normalize string (remove accents, unify apostrophes)
+  function normalizeBase(s){
+    if(!s) return '';
+    // remove surrounding whitespace
+    s = s.trim();
+    // replace special apostrophes with straight apostrophe
+    s = s.replace(/[’′‘`]/g, "'");
+    // decompose unicode and remove diacritics
+    s = s.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    return s;
+  }
+
+  // Build filename slug from a display name
+  function slugify(name){
+    if(!name) return '';
+    // manual override first
+    if(manualMap[name]) return manualMap[name];
+
+    let s = normalizeBase(name);
+
+    // Handle common pattern: regional prefix at start (e.g. "Alolan Persian")
+    const parts = s.split(/\s+/);
+    if(parts.length >= 2){
+      const first = parts[0].toLowerCase();
+      if(regionalPrefixes.includes(first)){
+        // move region to end: "Alolan Persian" -> "Persian Alolan"
+        const region = parts.shift().toLowerCase(); // remove first
+        s = parts.join(' ') + ' ' + region;
+      }
+    }
+
+    // Handle Rotom-style or similar where the form precedes the base (e.g. "Wash Rotom")
+    // Detect patterns like "<form> <base>" where base is known "Rotom" or other known bases.
+    // We'll use a list of known "base last-word" pokemon that often have form prefix
+    const formFirstBases = ['Rotom','Rotom.','Deoxys','Meowstic','Urshifu','Toxtricity','Zacian','Zamazenta']; // étendre si besoin
+    {
+      const p = s.split(/\s+/);
+      if(p.length === 2){
+        const [a,b] = p;
+        // If second word matches a base that commonly has prefix forms, swap order
+        if(formFirstBases.map(x=>x.toLowerCase()).includes(b.toLowerCase())){
+          s = `${b} ${a}`;
+        }
+      }
+    }
+
+    // Some names contain slashes like "Type: Null" or "Hoopa-Unbound" — keep words but remove punctuation
+    // Replace any colon with space
+    s = s.replace(/[:]/g,' ');
+    // Remove periods (Mr. Mime -> Mr Mime) but we'll strip later
+    s = s.replace(/\./g,'');
+    // Replace apostrophes (') removed in filename
+    s = s.replace(/['’]/g,'');
+
+    // Lowercase, convert spaces to hyphens, keep existing hyphens, remove anything not a-z0-9-
+    s = s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+    // Collapse multiple hyphens
+    s = s.replace(/-+/g,'-').replace(/^-|-$/g,'');
+
+    return s;
+  }
+
   const rows = arr.map(p=>{
     const nameSpan = document.createElement('span');
     nameSpan.className='cell-name';
     nameSpan.title = p.name || '';
     nameSpan.textContent = p.name || '';
+
+    const fileName = slugify(p.name || '');
+    const img = document.createElement('img');
+    img.src = fileName ? `https://img.pokemondb.net/sprites/scarlet-violet/normal/${fileName}.png` : '';
+    img.alt = p.name || 'pokemon';
+    img.style.width = '100px';
+    img.style.height = '100px';
+    img.style.objectFit = 'contain';
+    img.style.display = 'block';
+    img.style.margin = '0 auto';
+
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="%23999">no-img</text></svg>';
+    };
+
     const type1 = typeBadge(p.type1);
     const type2 = typeBadge(p.type2);
-    return [p.id, nameSpan, type1, type2, p.total, p.hp, p.atk, p.def, p.spatk, p.spdef, p.spd];
+    return [p.id, nameSpan, img, type1, type2, p.total, p.hp, p.atk, p.def, p.spatk, p.spdef, p.spd];
   });
+
   tablePokemonContainer.innerHTML=''; tablePokemonContainer.appendChild(createTable(headers, rows, 'tbl-pokemon'));
 }
+
 
 function renderTableItems(arr){
   if(!arr.length){ tableItemsContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
