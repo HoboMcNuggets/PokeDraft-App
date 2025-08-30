@@ -15,14 +15,14 @@
   .picked { background:#f7fdf0; border:1px solid #cde7a6; padding:8px; border-radius:6px; width:100%; }
   .error { color:#b00020; font-weight:600; }
   table { border-collapse:collapse; width:100%; margin-top:8px; table-layout:fixed; }
-  th, td { border:1px solid #ddd; padding:6px 8px; text-align:left; font-size:0.95em; vertical-align:top; }
+  th, td { border:1px solid #ddd; padding:6px 8px; text-align:center; font-size:0.95em; vertical-align:center; }
   th { background:#f0f0f0; font-weight:600; }
   .section { margin-top:14px; }
   .preview { color:#444; font-size:0.9em; margin-top:6px; }
   /* Column width distribution (percent of table width) */
-  /* Pokémon table: #:5% | Nom:20% | Type1:10% | Type2:10% | Total:6% | HP:6% | Atk:6% | Def:6% | SpAtk:6% | SpDef:6% | Spe:6%  -> sums ~87% leaving room for borders; Description-style columns handle overflow */
-  .tbl-pokemon th:nth-child(1), .tbl-pokemon td:nth-child(1) { width:5%; max-width:5%; }
-  .tbl-pokemon th:nth-child(2), .tbl-pokemon td:nth-child(2) { width:20%; max-width:20%; }
+  /* Pokémon table: Nom:10% | Sprite:10% | Type1:10% | Type2:10% | Total:6% | HP:6% | Atk:6% | Def:6% | SpAtk:6% | SpDef:6% | Spe:6%  -> sums ~87% leaving room for borders; Description-style columns handle overflow */
+  .tbl-pokemon th:nth-child(1), .tbl-pokemon td:nth-child(1) { width:10%; max-width:10%; }
+  .tbl-pokemon th:nth-child(2), .tbl-pokemon td:nth-child(2) { width:10%; max-width:10%; }
   .tbl-pokemon th:nth-child(3), .tbl-pokemon td:nth-child(3),
   .tbl-pokemon th:nth-child(4), .tbl-pokemon td:nth-child(4) { width:10%; max-width:10%; }
   .tbl-pokemon th:nth-child(5), .tbl-pokemon td:nth-child(5),
@@ -281,7 +281,7 @@ function typeBadge(type){
 
 function renderTablePokemon(arr){
   if(!arr.length){ tablePokemonContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
-  const headers=['#','Nom','Image','Type primaire','Type secondaire','Base stats','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
+  const headers=['Nom','Image','Type primaire','Type secondaire','Base stats','HP','Attack','Defense','Sp. Attack','Sp. Defense','Speed'];
 
   // Liste des préfixes régionaux / variantes qu'on veut transformer en suffixe filename
   const regionalPrefixes = ['alolan','galarian','hisuian','paldean','alola','galar','paldea','hisui'];
@@ -388,9 +388,9 @@ function renderTablePokemon(arr){
     img.style.width = '100px';
     img.style.height = '100px';
     img.style.objectFit = 'contain';
-    img.style.display = 'block';
-    img.style.margin = '0 auto';
+    img.style.display = 'inline';
 
+	
     img.onerror = () => {
       img.onerror = null;
       img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="%23999">no-img</text></svg>';
@@ -398,7 +398,7 @@ function renderTablePokemon(arr){
 
     const type1 = typeBadge(p.type1);
     const type2 = typeBadge(p.type2);
-    return [p.id, nameSpan, img, type1, type2, p.total, p.hp, p.atk, p.def, p.spatk, p.spdef, p.spd];
+    return [nameSpan, img, type1, type2, p.total, p.hp, p.atk, p.def, p.spatk, p.spdef, p.spd];
   });
 
   tablePokemonContainer.innerHTML=''; tablePokemonContainer.appendChild(createTable(headers, rows, 'tbl-pokemon'));
