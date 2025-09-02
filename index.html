@@ -20,31 +20,151 @@
   .section { margin-top:14px; }
   .preview { color:#444; font-size:0.9em; margin-top:6px; }
   /* Column width distribution (percent of table width) */
-  /* Pokémon table: Nom:10% | Sprite:10% | Type1:10% | Type2:10% | Total:6% | HP:6% | Atk:6% | Def:6% | SpAtk:6% | SpDef:6% | Spe:6%  -> sums ~87% leaving room for borders; Description-style columns handle overflow */
-  .tbl-pokemon th:nth-child(1), .tbl-pokemon td:nth-child(1) { width:10%; max-width:10%; }
-  .tbl-pokemon th:nth-child(2), .tbl-pokemon td:nth-child(2) { width:10%; max-width:10%; }
-  .tbl-pokemon th:nth-child(3), .tbl-pokemon td:nth-child(3),
-  .tbl-pokemon th:nth-child(4), .tbl-pokemon td:nth-child(4) { width:10%; max-width:10%; }
-  .tbl-pokemon th:nth-child(5), .tbl-pokemon td:nth-child(5),
-  .tbl-pokemon th:nth-child(6), .tbl-pokemon td:nth-child(6),
-  .tbl-pokemon th:nth-child(7), .tbl-pokemon td:nth-child(7),
-  .tbl-pokemon th:nth-child(8), .tbl-pokemon td:nth-child(8),
-  .tbl-pokemon th:nth-child(9), .tbl-pokemon td:nth-child(9),
-  .tbl-pokemon th:nth-child(10), .tbl-pokemon td:nth-child(10),
-  .tbl-pokemon th:nth-child(11), .tbl-pokemon td:nth-child(11) { width:6%; max-width:6%; }
+/* Styles communs */
+.tbl-pokemon,
+.tbl-moves,
+.tbl-items {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-size: 14px;
+}
 
-  /* Moves table: #:6% | Nom:24% | Type:10% | Power:8% | Acc:8% | Effet:44% */
-  .tbl-moves th:nth-child(1), .tbl-moves td:nth-child(1) { width:6%; }
-  .tbl-moves th:nth-child(2), .tbl-moves td:nth-child(2) { width:24%; }
-  .tbl-moves th:nth-child(3), .tbl-moves td:nth-child(3) { width:10%; }
-  .tbl-moves th:nth-child(4), .tbl-moves td:nth-child(4),
-  .tbl-moves th:nth-child(5), .tbl-moves td:nth-child(5) { width:8%; text-align:center; }
-  .tbl-moves th:nth-child(6), .tbl-moves td:nth-child(6) { width:44%; }
+.tbl-pokemon th,
+.tbl-pokemon td,
+.tbl-moves th,
+.tbl-moves td,
+.tbl-items th,
+.tbl-items td {
+  padding: 8px 10px;
+  border: 1px solid #e0e0e0;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-  /* Items table: #:6% | Nom:18% | Description:76% */
-  .tbl-items th:nth-child(1), .tbl-items td:nth-child(1) { width:6%; }
-  .tbl-items th:nth-child(2), .tbl-items td:nth-child(2) { width:18%; max-width:18%; }
-  .tbl-items th:nth-child(3), .tbl-items td:nth-child(3) { width:76%; }
+/* Centre le texte des headers, images et valeurs (données numériques/icônes) */
+.tbl-pokemon th,
+.tbl-moves th,
+.tbl-items th {
+  text-align: center;
+  font-weight: 600;
+}
+
+.tbl-pokemon td.center,
+.tbl-moves td.center,
+.tbl-items td.center,
+.tbl-pokemon td img,
+.tbl-moves td img,
+.tbl-items td img {
+  text-align: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Autorise le wrapping pour descriptions/effets */
+.tbl-pokemon td.wrap,
+.tbl-moves td.wrap,
+.tbl-items td.wrap {
+  white-space: normal;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Sprite */
+.tbl-pokemon img.sprite { max-width: 100%; height: auto; }
+
+/* --------- Tableau Pokémon ---------
+   Réduction du champ Nom (avant 25% → maintenant 18%)
+   Les autres colonnes gardent des largeurs proportionnelles similaires
+-------------------------------------*/
+.tbl-pokemon th:nth-child(1),
+.tbl-pokemon td:nth-child(1) { width: 12%; min-width: 120px; max-width: 22%; } /* Nom réduit */
+.tbl-pokemon th:nth-child(2),
+.tbl-pokemon td:nth-child(2) { width: 10%; min-width: 56px; max-width: 12%; }  /* Sprite */
+.tbl-pokemon th:nth-child(3),
+.tbl-pokemon td:nth-child(3) { width: 11%; min-width: 52px; max-width: 12%; }  /* Type1 */
+.tbl-pokemon th:nth-child(4),
+.tbl-pokemon td:nth-child(4) { width: 11%; min-width: 52px; max-width: 12%; }  /* Type2 */
+.tbl-pokemon th:nth-child(5),
+.tbl-pokemon td:nth-child(5) { width: 6%; min-width: 44px; max-width: 8%; }    /* Total */
+.tbl-pokemon th:nth-child(6),
+.tbl-pokemon td:nth-child(6) { width: 6%; min-width: 40px; max-width: 8%; }    /* HP */
+.tbl-pokemon th:nth-child(7),
+.tbl-pokemon td:nth-child(7) { width: 6%; min-width: 40px; max-width: 8%; }    /* Atk */
+.tbl-pokemon th:nth-child(8),
+.tbl-pokemon td:nth-child(8) { width: 6%; min-width: 40px; max-width: 8%; }    /* Def */
+.tbl-pokemon th:nth-child(9),
+.tbl-pokemon td:nth-child(9) { width: 6%; min-width: 40px; max-width: 8%; }    /* SpAtk */
+.tbl-pokemon th:nth-child(10),
+.tbl-pokemon td:nth-child(10) { width: 6%; min-width: 40px; max-width: 8%; }  /* SpDef */
+.tbl-pokemon th:nth-child(11),
+.tbl-pokemon td:nth-child(11) { width: 6%; min-width: 40px; max-width: 8%; }  /* Spe */
+
+/* --------- Tableau Moves ---------
+   Nom réduit légèrement (avant 30% -> 26%)
+   Power et Accuracy réduits (avant 8% -> 5%)
+   Effet garde la priorité pour le wrapping
+-------------------------------------*/
+.tbl-moves th:nth-child(1),
+.tbl-moves td:nth-child(1) { width: 15%; min-width: 140px; max-width: 35%; } /* Nom réduit */
+.tbl-moves th:nth-child(2),
+.tbl-moves td:nth-child(2) { width: 6%; min-width: 48px; max-width: 8%; }    /* Type */
+.tbl-moves th:nth-child(3),
+.tbl-moves td:nth-child(3) { width: 5%; min-width: 40px; max-width: 6%; }    /* Power réduit */
+.tbl-moves th:nth-child(4),
+.tbl-moves td:nth-child(4) { width: 5%; min-width: 40px; max-width: 6%; }    /* Accuracy réduit */
+.tbl-moves th:nth-child(5),
+.tbl-moves td:nth-child(5) { width: 58%; min-width: 220px; max-width: 70%; }  /* Effet (large) */
+.tbl-moves td.wrap { white-space: normal; }
+
+/* Centre les valeurs numériques et pastilles de type */
+.tbl-moves td.numeric,
+.tbl-moves td.type { text-align: center; }
+
+/* pastille type */
+.type-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; color:#fff; background:#777; }
+
+/* --------- Tableau Items ---------
+   Nom réduit (avant 25% -> 16%) Description prend le reste
+-------------------------------------*/
+.tbl-items th:nth-child(1),
+.tbl-items td:nth-child(1) { width: 10%; min-width: 110px; max-width: 22%; } /* Nom réduit */
+.tbl-items th:nth-child(2),
+.tbl-items td:nth-child(2) { width: 84%; min-width: 240px; max-width: 88%; } /* Description */
+
+/* Centrage global pour headers, images et valeurs */
+.tbl-pokemon th,
+.tbl-moves th,
+.tbl-items th {
+  text-align: center;
+  font-weight: 600;
+}
+
+.tbl-pokemon td.center,
+.tbl-moves td.center,
+.tbl-items td.center,
+.tbl-pokemon td img,
+.tbl-moves td img,
+.tbl-items td img {
+  text-align: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Colonnes Description (items) et Effet (moves) alignées à gauche */
+.tbl-items td:nth-child(2),
+.tbl-moves td:nth-child(5) {
+  text-align: left;
+  white-space: normal;   /* autorise le wrapping */
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
 
   /* Name truncation (approx 25 chars) */
   .cell-name {
@@ -407,7 +527,7 @@ function renderTablePokemon(arr){
 
 function renderTableItems(arr){
   if(!arr.length){ tableItemsContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
-  const headers=['#','Nom','Description'];
+  const headers=['Nom','Description'];
   const rows = arr.map(it=>{
     const nameSpan = document.createElement('span');
     nameSpan.className='cell-name';
@@ -415,21 +535,21 @@ function renderTableItems(arr){
     nameSpan.textContent = it.name || '';
     // description allowed to wrap, multiline
     const desc = it.desc || '';
-    return [it.id, nameSpan, desc];
+    return [nameSpan, desc];
   });
   tableItemsContainer.innerHTML=''; tableItemsContainer.appendChild(createTable(headers, rows, 'tbl-items'));
 }
 
 function renderTableMoves(arr){
   if(!arr.length){ tableMovesContainer.innerHTML='<div class="small">(aucun)</div>'; return; }
-  const headers=['#','Nom','Type','Power','Accuracy','Effet'];
+  const headers=['Nom','Type','Power','Accuracy','Effet'];
   const rows = arr.map(m=>{
     const nameSpan = document.createElement('span');
     nameSpan.className='cell-name';
     nameSpan.title = m.name || '';
     nameSpan.textContent = m.name || '';
     const type = typeBadge(m.type);
-    return [m.id, nameSpan, type, m.power, m.acc, m.effect];
+    return [nameSpan, type, m.power, m.acc, m.effect];
   });
   tableMovesContainer.innerHTML=''; tableMovesContainer.appendChild(createTable(headers, rows, 'tbl-moves'));
 }
